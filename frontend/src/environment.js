@@ -1,8 +1,20 @@
-let IS_PROD = true;
-const server = IS_PROD ?
-    "https://apnacollegebackend.onrender.com" :
+// Dynamic environment variable configuration
+const getBackendUrl = () => {
+    if (process.env.REACT_APP_BACKEND_URL) {
+        return process.env.REACT_APP_BACKEND_URL;
+    }
+    
+    // Automatically detect local development host vs production deployment host
+    const isLocalhost = 
+        window.location.hostname === "localhost" || 
+        window.location.hostname === "127.0.0.1" || 
+        window.location.hostname.startsWith("192.168.");
+        
+    return isLocalhost 
+        ? "http://localhost:8000" 
+        : "https://apnavideocall-backend.onrender.com"; // Your production Render backend URL
+};
 
-    "http://localhost:8000"
-
+const server = getBackendUrl();
 
 export default server;

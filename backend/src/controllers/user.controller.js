@@ -69,20 +69,48 @@ const register = async (req, res) => {
 const getUserHistory = async (req, res) => {
     const { token } = req.query;
 
+    console.log("[BACKEND DEBUG] getUserHistory endpoint triggered");
+    console.log("-> Query Parameters:", req.query);
+    console.log("-> Headers:", req.headers);
+
+    if (!token) {
+        console.warn("[BACKEND WARNING] Token is missing from query!");
+        return res.status(httpStatus.UNAUTHORIZED).json({ message: "Token is required" });
+    }
+
     try {
         const user = await User.findOne({ token: token });
-        const meetings = await Meeting.find({ user_id: user.username })
-        res.json(meetings)
+        if (!user) {
+            console.warn("[BACKEND WARNING] No user found with the provided token!");
+            return res.status(httpStatus.UNAUTHORIZED).json({ message: "Invalid or expired session token" });
+        }
+        const meetings = await Meeting.find({ user_id: user.username });
+        console.log(`[BACKEND DEBUG] Found ${meetings.length} meetings for user: ${user.username}`);
+        return res.status(httpStatus.OK).json(meetings);
     } catch (e) {
-        res.json({ message: `Something went wrong ${e}` })
+        console.error("[BACKEND ERROR] Error in getUserHistory:", e);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: `Something went wrong: ${e.message}` });
     }
 }
 
 const addToHistory = async (req, res) => {
     const { token, meeting_code } = req.body;
 
+    console.log("[BACKEND DEBUG] addToHistory endpoint triggered");
+    console.log("-> Request Body:", req.body);
+    console.log("-> Headers:", req.headers);
+
+    if (!token || !meeting_code) {
+        console.warn("[BACKEND WARNING] Token or meeting_code missing in request body!");
+        return res.status(httpStatus.BAD_REQUEST).json({ message: "Token and meeting code are required" });
+    }
+
     try {
         const user = await User.findOne({ token: token });
+        if (!user) {
+            console.warn("[BACKEND WARNING] No user found with the provided token!");
+            return res.status(httpStatus.UNAUTHORIZED).json({ message: "Invalid or expired session token" });
+        }
 
         const newMeeting = new Meeting({
             user_id: user.username,
@@ -90,10 +118,11 @@ const addToHistory = async (req, res) => {
         })
 
         await newMeeting.save();
-
-        res.status(httpStatus.CREATED).json({ message: "Added code to history" })
+        console.log(`[BACKEND DEBUG] Successfully saved meeting ${meeting_code} to history of user ${user.username}`);
+        return res.status(httpStatus.CREATED).json({ message: "Added code to history" });
     } catch (e) {
-        res.json({ message: `Something went wrong ${e}` })
+        console.error("[BACKEND ERROR] Error in addToHistory:", e);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: `Something went wrong: ${e.message}` });
     }
 }
 

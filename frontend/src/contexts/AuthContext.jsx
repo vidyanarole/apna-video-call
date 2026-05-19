@@ -73,13 +73,17 @@ export const AuthProvider = ({ children }) => {
     }
 
     const addToUserHistory = async (meetingCode) => {
+        const payload = {
+            token: localStorage.getItem("token"),
+            meeting_code: meetingCode
+        };
+        console.log("[AXIOS OUTBOUND] POST `/add_to_activity` with payload:", payload);
         try {
-            let request = await client.post("/add_to_activity", {
-                token: localStorage.getItem("token"),
-                meeting_code: meetingCode
-            });
-            return request
+            let request = await client.post("/add_to_activity", payload);
+            console.log("[AXIOS INBOUND] Response status:", request.status);
+            return request;
         } catch (e) {
+            console.error("[AXIOS INBOUND ERROR] POST `/add_to_activity` failed:", e.response?.data || e.message);
             throw e;
         }
     }

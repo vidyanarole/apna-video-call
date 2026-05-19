@@ -3,9 +3,6 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -42,10 +39,7 @@ export default function Authentication() {
     let handleAuth = async () => {
         try {
             if (formState === 0) {
-
-                let result = await handleLogin(username, password)
-
-
+                await handleLogin(username, password)
             }
             if (formState === 1) {
                 let result = await handleRegister(name, username, password);
@@ -58,9 +52,8 @@ export default function Authentication() {
                 setPassword("")
             }
         } catch (err) {
-
             console.log(err);
-            let message = (err.response.data.message);
+            let message = err.response?.data?.message || err.message || "Failed to connect to backend server";
             setError(message);
         }
     }
@@ -76,15 +69,29 @@ export default function Authentication() {
                     sm={4}
                     md={7}
                     sx={{
-                        backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundColor: (t) =>
-                            t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        background: 'linear-gradient(135deg, #131b31 0%, #0a0e1a 100%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 4,
+                        color: 'white',
+                        textAlign: 'center'
                     }}
-                />
-                <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+                >
+                    <Box sx={{ maxWidth: 450 }}>
+                        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold', letterSpacing: -0.5 }}>
+                            Apna Video Call
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', mb: 3 }}>
+                            Connect with your loved ones, colleagues, and friends instantly from anywhere.
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                            Providing modern WebRTC video calls with robust security and screen sharing capability.
+                        </Typography>
+                    </Box>
+                </Grid>
+                <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Box
                         sx={{
                             my: 8,
@@ -92,30 +99,43 @@ export default function Authentication() {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                            width: '100%',
+                            maxWidth: 400
                         }}
                     >
-                        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                        <Avatar sx={{ m: 1, bgcolor: '#ff9839' }}>
                             <LockOutlinedIcon />
                         </Avatar>
 
+                        <Typography component="h1" variant="h5" sx={{ mb: 2 }}>
+                            {formState === 0 ? "Sign In" : "Create Account"}
+                        </Typography>
 
-                        <div>
-                            <Button variant={formState === 0 ? "contained" : ""} onClick={() => { setFormState(0) }}>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                            <Button 
+                                variant={formState === 0 ? "contained" : "outlined"} 
+                                onClick={() => { setFormState(0); setError(""); }}
+                                sx={{ borderRadius: '20px', textTransform: 'none', px: 3 }}
+                            >
                                 Sign In
                             </Button>
-                            <Button variant={formState === 1 ? "contained" : ""} onClick={() => { setFormState(1) }}>
+                            <Button 
+                                variant={formState === 1 ? "contained" : "outlined"} 
+                                onClick={() => { setFormState(1); setError(""); }}
+                                sx={{ borderRadius: '20px', textTransform: 'none', px: 3 }}
+                            >
                                 Sign Up
                             </Button>
-                        </div>
+                        </Box>
 
-                        <Box component="form" noValidate sx={{ mt: 1 }}>
+                        <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
                             {formState === 1 ? <TextField
                                 margin="normal"
                                 required
                                 fullWidth
-                                id="username"
+                                id="name"
                                 label="Full Name"
-                                name="username"
+                                name="name"
                                 value={name}
                                 autoFocus
                                 onChange={(e) => setName(e.target.value)}
@@ -129,9 +149,7 @@ export default function Authentication() {
                                 label="Username"
                                 name="username"
                                 value={username}
-                                autoFocus
                                 onChange={(e) => setUsername(e.target.value)}
-
                             />
                             <TextField
                                 margin="normal"
@@ -142,22 +160,20 @@ export default function Authentication() {
                                 value={password}
                                 type="password"
                                 onChange={(e) => setPassword(e.target.value)}
-
                                 id="password"
                             />
 
-                            <p style={{ color: "red" }}>{error}</p>
+                            {error && <p style={{ color: "red", fontSize: '0.9rem', margin: '8px 0' }}>{error}</p>}
 
                             <Button
                                 type="button"
                                 fullWidth
                                 variant="contained"
-                                sx={{ mt: 3, mb: 2 }}
+                                sx={{ mt: 3, mb: 2, bgcolor: '#ff9839', '&:hover': { bgcolor: '#e0822b' }, py: 1.2, borderRadius: '10px', fontWeight: 'bold' }}
                                 onClick={handleAuth}
                             >
                                 {formState === 0 ? "Login " : "Register"}
                             </Button>
-
                         </Box>
                     </Box>
                 </Grid>

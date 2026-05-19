@@ -4,6 +4,7 @@ import { Server } from "socket.io"
 let connections = {}
 let messages = {}
 let timeOnline = {}
+const users = {}  // Global registry mapping socket.id -> username
 
 export const connectToSocket = (server) => {
     const io = new Server(server, {
@@ -15,26 +16,39 @@ export const connectToSocket = (server) => {
         }
     });
 
-
     io.on("connection", (socket) => {
 
         console.log("SOMETHING CONNECTED")
 
-        socket.on("join-call", (path) => {
+        const handleJoinCall = (arg1, arg2) => {
+            let path, username;
+            if (arg1 && typeof arg1 === 'object') {
+                path = arg1.roomId || arg1.path || arg1.meetingCode;
+                username = arg1.userName || arg1.username || arg1.displayName;
+            } else {
+                path = arg1;
+                username = arg2;
+            }
 
             if (connections[path] === undefined) {
                 connections[path] = []
             }
             connections[path].push(socket.id)
 
+            // Save user display name metadata in global users registry
+            users[socket.id] = username || `User_${socket.id.substring(0, 4)}`;
             timeOnline[socket.id] = new Date();
 
-            // connections[path].forEach(elem => {
-            //     io.to(elem)
-            // })
+            // Map all socket IDs in the room to their respective active metadata packets
+            const clientsWithMetadata = connections[path].map(id => ({
+                socketId: id,
+                username: users[id] || `User_${id.substring(0, 4)}`
+            }));
+
+            console.log(`[SOCKET BACKEND] User ${users[socket.id]} (${socket.id}) joined room: ${path}`);
 
             for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path])
+                io.to(connections[path][a]).emit("user-joined", socket.id, clientsWithMetadata)
             }
 
             if (messages[path] !== undefined) {
@@ -43,12 +57,22 @@ export const connectToSocket = (server) => {
                         messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
                 }
             }
+        };
 
-        })
+        socket.on("join-call", handleJoinCall);
+        socket.on("join-room", handleJoinCall);
 
         socket.on("signal", (toId, message) => {
-            io.to(toId).emit("signal", socket.id, message);
-        })
+            const senderUsername = users[socket.id] || `User_${socket.id.substring(0, 4)}`;
+            try {
+                let parsed = JSON.parse(message);
+                parsed.senderUsername = senderUsername;
+                io.to(toId).emit("signal", socket.id, JSON.stringify(parsed));
+                console.log(`[SOCKET BACKEND] Forwarded signal with username ${senderUsername} (${socket.id}) to ${toId}`);
+            } catch (e) {
+                io.to(toId).emit("signal", socket.id, message);
+            }
+        });
 
         socket.on("chat-message", (data, sender) => {
 
@@ -108,6 +132,9 @@ export const connectToSocket = (server) => {
 
             }
 
+            // Clean up username mapping in global registry to prevent memory leaks
+            delete users[socket.id];
+            delete timeOnline[socket.id];
 
         })
 
